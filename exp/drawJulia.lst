@@ -1,0 +1,7 @@
+     1                                  section .data
+     2 00000000 0000000000001040            four dq 4.0
+     3                                  section .text
+     4                                      global drawJulia
+     5                                  drawJulia:
+     6 00000000 0545230100                  add eax, 0x12345
+     7                                      

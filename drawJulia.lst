@@ -1,0 +1,47 @@
+     1                                  section .text
+     2                                          global drawJulia
+     3                                  drawJulia:
+     4 00000000 B804000000                      mov eax, 4
+     5 00000005 F2440F2AE0                      cvtsi2sd xmm12, eax
+     6 0000000A F2440F2ACA                      cvtsi2sd xmm9, edx              ; temp1 = (double) lines; convert scalar integer to scalar double
+     7 0000000F F2440F2AD6                      cvtsi2sd xmm10, esi             ; temp2 = (double) lineSize;
+     8 00000014 F2410F5EE9                      divsd xmm5, xmm9                ; sizeIm /= temp1; dividing 2 floats
+     9 00000019 F2410F5EDA                      divsd xmm3, xmm10               ; sizeRe /= temp2;
+    10 0000001E 4D31C9                          xor r9, r9                      ; y = 0;
+    11                                  for_y:
+    12 00000021 F2490F2AF1                      cvtsi2sd xmm6, r9               ; imZ_for_curr_y = (double)y;
+    13 00000026 F20F59F5                        mulsd xmm6, xmm5                ; imZ_for_curr_y *= sizeIm; multiply 2 doubles
+    14 0000002A F20F58F4                        addsd xmm6, xmm4                ; imZ_for_curr_y += minIm;
+    15 0000002E 4D31C0                          xor r8, r8                      ; x = 0;
+    16                                  for_x:
+    17 00000031 F20F10FE                        movsd xmm7, xmm6                ; imZ = imZ_for_curr_y;
+    18 00000035 F24D0F2AC0                      cvtsi2sd xmm8, r8               ; reZ = (double) x;
+    19 0000003A F2440F59C3                      mulsd xmm8, xmm3                ; reZ *= sizeRe;
+    20 0000003F F2440F58C2                      addsd xmm8, xmm2                ; reZ += minRe;
+    21 00000044 B9FF000000                      mov rcx, 255                    ; counter = 255;
+    22                                  for_counter:
+    23 00000049 F2450F10C8                      movsd xmm9, xmm8                ; temp1 = reZ;
+    24 0000004E F2450F59C8                      mulsd xmm9, xmm8                ; temp1 *= reZ;
+    25 00000053 F2440F10D7                      movsd xmm10, xmm7               ; temp2 = imZ;
+    26 00000058 F2440F59D7                      mulsd xmm10, xmm7               ; temp2 *= imZ;
+    27 0000005D F2450F10D9                      movsd xmm11, xmm9               ; temp3 = temp1;
+    28 00000062 F2450F58DA                      addsd xmm11, xmm10              ; temp3 += temp2;
+    29 00000067 66450F2EDC                      ucomisd xmm11, xmm12            ; if (temp3 >= four) break; unordered compare scalar double precision floating
+    30 0000006C 731E                            jae for_x_end                   ; if (temp3 >= four) break; jump above or equal
+    31 0000006E F2410F59F8                      mulsd xmm7, xmm8                ; imZ *= reZ;
+    32 00000073 F20F58FF                        addsd xmm7, xmm7                ; imZ += imZ;
+    33 00000077 F20F58F9                        addsd xmm7, xmm1                ; imZ += imConst;
+    34 0000007B F2450F10C1                      movsd xmm8, xmm9                ; reZ = temp1;
+    35 00000080 F2450F5CC2                      subsd xmm8, xmm10               ; reZ -= temp2;
+    36 00000085 F2440F58C0                      addsd xmm8, xmm0                ; reZ += reConst;
+    37 0000008A E2BD                            loop for_counter                ; counter--; if (counter == 0) break;
+    38                                  for_x_end:
+    39 0000008C 880F                            mov byte [rdi], cl              ; *buffer = counter;
+    40 0000008E 48FFC7                          inc rdi                         ; buffer++;
+    41 00000091 49FFC0                          inc r8                          ; x++;
+    42 00000094 4939F0                          cmp r8, rsi                     ; if (x >= lineSize) break;
+    43 00000097 7C98                            jl for_x                        ; if (x >= lineSize) break;
+    44 00000099 49FFC1                          inc r9                          ; y++;
+    45 0000009C 4939D1                          cmp r9, rdx                     ; if (y >= lines) break;
+    46 0000009F 7C80                            jl for_y
+    47                                          
